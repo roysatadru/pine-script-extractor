@@ -21,7 +21,7 @@ export const saveLessonSourceCode = async (
 
   try {
     const sourceCodeHTML = await page.$eval(
-      '[id^="ember"] .custom-theme kapow-copy pre',
+      '[id^="ember"] .custom-theme .kapow-copy pre',
       (element) => {
         const clonedElement = element.parentElement!.cloneNode(
           true,
