@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { launchBrowser } from './services/puppeteer';
 import * as utils from './utils';
 import fs from 'node:fs';
 import commandLineArgs from 'command-line-args';
@@ -11,7 +10,7 @@ import {
   saveLessonVideo,
 } from './site/content';
 import { Browser, Page } from 'puppeteer';
-import { gotoPage } from './services/puppeteer/goToPage';
+import * as puppeteerServices from './services/puppeteer';
 
 // accept the command line arguments
 const optionDefinitions = [
@@ -35,13 +34,13 @@ async function retryLoginUntilSuccess(): Promise<{
   browser: Browser;
   page: Page;
 }> {
-  const { browser } = await launchBrowser({
+  const { browser } = await puppeteerServices.launchBrowser({
     defaultViewport: { width: 1920, height: 1024 },
   });
 
   try {
     await browser.newPage();
-    const page = await gotoPage(browser, credentials.url);
+    const page = await puppeteerServices.gotoPage(browser, credentials.url);
     const mainPage = await helpers.randomizeUserInteraction(page);
 
     // select <input> elements with id="user[email]" and "user[password]" and checkbox "user[remember_me]" and fill them with the provided credentials
@@ -198,8 +197,6 @@ export async function app() {
       const asyncCalls = [] as Array<Promise<void>>;
       const heading = section.headings[headingIndex];
 
-      page = await gotoPage(browser, heading.link);
-
       const outputFolder = path.join(outputPath, section.section);
       const outputFilePrefix = heading.heading;
 
@@ -214,16 +211,14 @@ export async function app() {
         }),
       ];
 
-      page.on('response', async (response) => {
-        asyncCalls.push(saveVideo(response));
-        asyncCalls.push(savePdf(response));
-      });
-
-      await page.reload({
-        waitUntil: ['networkidle0', 'networkidle2', 'domcontentloaded', 'load'],
-      });
-      await utils.delay(5000);
-      page.removeAllListeners('response');
+      page = await puppeteerServices.attachPageResponseListener(
+        browser,
+        heading.link,
+        (response) => {
+          asyncCalls.push(saveVideo(response));
+          asyncCalls.push(savePdf(response));
+        },
+      );
 
       await Promise.all([
         saveLessonContent(page, {
