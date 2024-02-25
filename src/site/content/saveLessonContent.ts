@@ -13,6 +13,11 @@ export const saveLessonContent = async (
 ) => {
   const { outputFolder, outputFilePrefix } = saveOptions;
 
+  // create the output directory if it doesn't exist
+  if (!fs.existsSync(outputFolder)) {
+    fs.mkdirSync(outputFolder, { recursive: true });
+  }
+
   const outputPath = path.join(outputFolder, `${outputFilePrefix}.md`);
 
   helpers.logger.verbose(`📃 Saving lesson content for ${outputPath}...`);
@@ -21,7 +26,7 @@ export const saveLessonContent = async (
 
   try {
     const lessonContentHTML = await page.$eval(
-      '[id^="ember"] .custom-theme p',
+      '[id^="ember"] .custom-theme .fr-view > *:not(.fr-view)',
       (element) => {
         const clonedElement = element.parentElement!.cloneNode(
           true,

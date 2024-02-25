@@ -13,6 +13,11 @@ export const saveLessonSourceCode = async (
 ) => {
   const { outputFolder, outputFilePrefix } = saveOptions;
 
+  // create the output directory if it doesn't exist
+  if (!fs.existsSync(outputFolder)) {
+    fs.mkdirSync(outputFolder, { recursive: true });
+  }
+
   const outputPath = path.join(outputFolder, `${outputFilePrefix}.pine`);
 
   helpers.logger.verbose(`🧑‍💻 Saving lesson source code for ${outputPath}...`);
